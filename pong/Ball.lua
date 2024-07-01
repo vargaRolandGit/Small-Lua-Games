@@ -25,3 +25,13 @@ end
 function Ball:render()
     love.graphics.rectangle('line', self.x, self.y, self.r, self.r) 
 end
+
+function Ball:collides(paddle)
+    if self.x > paddle.x + paddle.w or paddle.x > self.x + self.r then
+        return false
+    end
+    if self.y > paddle.y + paddle.h or paddle.y > self.y + self.r then
+        return false
+    end
+    return true
+end

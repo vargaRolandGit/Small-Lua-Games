@@ -6,9 +6,10 @@ PADDLE_SPEED = 300
 Class = require 'class'
 
 require 'Ball'
+require 'Paddle'
 
 function love.load()
-
+    love.window.setTitle('pong')
     math.randomseed(os.time())
 
     font = love.graphics.newFont('Inter-Bold.ttf', 34)
@@ -21,15 +22,22 @@ function love.load()
 
     player1Score = 0
     player2Score = 0
-    player1Y     = (WINDOW_HEIGHT/100) + 10
-    player2Y     = WINDOW_HEIGHT - (WINDOW_HEIGHT/100) - 160 
 
-    ballX        = WINDOW_WIDTH  / 2 - 10
-    ballY        = WINDOW_HEIGHT / 2 - 10
-    ballDX       = math.random(2) == 1 and 100 or -100
-    ballDY       = math.random(-50, 50)
+    ball = Ball(WINDOW_WIDTH  / 2 - 10, WINDOW_HEIGHT / 2 - 10, 20)
+    player1 = Paddle(
+        (WINDOW_WIDTH/100) * 3, 
+        (WINDOW_HEIGHT/100) + 10,
+        20,
+        150 
+    )
+    player2 = Paddle(
+        WINDOW_WIDTH - (WINDOW_WIDTH/100) * 3, 
+        WINDOW_HEIGHT - (WINDOW_HEIGHT/100) - 160,
+        20,
+        150
+    )
 
-    gameState    = 'start'
+    gameState = 'start'
 
 end
 
@@ -44,48 +52,65 @@ function love.draw()
         WINDOW_WIDTH + 100,
         'center'
     )
-    love.graphics.rectangle(
-        'line', 
-        ballX,
-        ballY,
-        20,
-        20
-    )
-    love.graphics.rectangle(
-        'line',
-        (WINDOW_WIDTH/100) * 3,
-        player1Y,
-        20, 
-        150
-    )
-    love.graphics.rectangle(
-        'line',
-        WINDOW_WIDTH - (WINDOW_WIDTH/100) * 3,
-        player2Y,
-        20, 
-        150
-    )
+
+    ball:render()
+    player1:render()
+    player2:render()
+
 end
 
 function love.update(dt)
-    if love.keyboard.isDown('w') and player1Y > 0 then
-        player1Y = player1Y - PADDLE_SPEED * dt
-    elseif love.keyboard.isDown('s') and player1Y < WINDOW_HEIGHT - 150 then
-        player1Y = player1Y + PADDLE_SPEED * dt
+
+    if love.keyboard.isDown('w') then
+        player1.dy = -PADDLE_SPEED
+    elseif love.keyboard.isDown('s') then
+        player1.dy = PADDLE_SPEED
+    else 
+        player1.dy = 0
     end
 
-    if love.keyboard.isDown('up') and player2Y > 0 then
-        player2Y = player2Y - PADDLE_SPEED * dt
-    elseif love.keyboard.isDown('down') and player2Y < WINDOW_HEIGHT - 150 then
-        player2Y = player2Y + PADDLE_SPEED * dt
+    if love.keyboard.isDown('up') then
+        player2.dy = -PADDLE_SPEED
+    elseif love.keyboard.isDown('down') then
+        player2.dy = PADDLE_SPEED
+    else 
+        player2.dy = 0
     end
 
     if gameState == 'play' then
-        ballX = ballX + ballDX * dt
-        ballY = ballY + ballDY * dt
-    end
-end
+        ball:update(dt)
 
+        if ball:collides(player1) then
+            ball.dx = -ball.dx * 1.05
+            ball.x = player1.x + 25
+
+            if ball.dy < 0 then
+                ball.dy = -math.random(10,150)
+            else
+                ball.dy = math.random(10,150)
+            end
+        end
+        if ball:collides(player2) then
+            ball.dx = -ball.dx * 1.05
+            ball.x = player2.x - 25 
+
+            if ball.dy < 0 then
+                ball.dy = -math.random(10,150)
+            else
+                ball.dy = math.random(10,150)
+            end
+        end
+
+        if ball.y < 0 or ball.y > WINDOW_HEIGHT - ball.r then
+            ball.dy = -ball.dy
+        end
+
+    end
+
+    player1:update(dt)
+    player2:update(dt)
+
+end
 
 function love.keypressed(key) 
     if key == 'enter' or key == 'return' then
@@ -93,10 +118,7 @@ function love.keypressed(key)
             gameState = 'play'
         else
             gameState = 'start'
-            ballX     = WINDOW_WIDTH  / 2 - 10
-            ballY     = WINDOW_HEIGHT / 2 - 10
-            ballDX    = math.random(2) == 1 and 100 or -100
-            ballDY    = math.random(-50, 50)
+            ball:reset()
         end
     end
 end
